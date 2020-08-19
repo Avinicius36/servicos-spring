@@ -1,30 +1,71 @@
 package com.vinicius.servicosspring.servicosspring.controller;
 
+import com.vinicius.servicosspring.servicosspring.domain.ClienteRepository;
 import com.vinicius.servicosspring.servicosspring.domain.model.Cliente;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RestController;
+import com.vinicius.servicosspring.servicosspring.domain.service.CadastroClienteService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
-import java.util.Arrays;
+import javax.validation.Valid;
 import java.util.List;
+import java.util.Optional;
 
 @RestController
+@RequestMapping("/clientes")
 public class ClienteController {
 
-    @GetMapping("/clientes")
+    @Autowired
+    private ClienteRepository clienteRepository;
+
+    @Autowired
+    private CadastroClienteService cadastroClienteService;
+
+    @GetMapping
     public List<Cliente> listar() {
-        var cliente1 = new Cliente();
-        cliente1.setNome("Joao");
-        cliente1.setEmail("joaodascouve@email.com");
-        cliente1.setId(1);
-        cliente1.setTelefone("31 9985445448");
+        return clienteRepository.findAll();
+    }
 
-        var cliente2 = new Cliente();
-        cliente2.setNome("Maria");
-        cliente2.setEmail("mariazinhadasilva@email.com");
-        cliente2.setId(2);
-        cliente2.setTelefone("31 9983466748");
+    @GetMapping("/{id}")
+    public ResponseEntity<Cliente> buscar(@PathVariable Long id) {
+        Optional<Cliente> cliente =  clienteRepository.findById(id);
 
-        return Arrays.asList(cliente1, cliente2);
+        if(cliente.isPresent()) {
+            return ResponseEntity.ok(cliente.get());
+        }
+
+       return ResponseEntity.notFound().build();
+    }
+
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    public Cliente adicionar(@Valid @RequestBody Cliente cliente) {
+        return cadastroClienteService.salvar(cliente);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Cliente> atualizar(@Valid @PathVariable Long id, @RequestBody Cliente cliente) {
+
+        if (!clienteRepository.existsById(id)) {
+            return ResponseEntity.notFound().build();
+        }
+        cliente.setId(id);
+        cliente = cadastroClienteService.salvar(cliente);
+
+        return ResponseEntity.ok(cliente);
+    }
+
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.OK)
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+
+        if(!clienteRepository.existsById(id)) {
+            return ResponseEntity.notFound().build();
+        }
+        cadastroClienteService.excluir(id);
+
+        return ResponseEntity.noContent().build();
 
     }
 }
